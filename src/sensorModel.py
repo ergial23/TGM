@@ -1,5 +1,6 @@
 import numpy as np
 from gridMap import gridMap
+import time
 
 class sensorModel:
     def __init__ (self, origin, width, height, resolution, range, invModel ,occPrior):
@@ -26,11 +27,12 @@ class sensorModel:
 
         ang, dist = z_t[:,0], z_t[:,1]
         ang = ang + x_t[2]
+        dist[dist>self.range] = self.range
         ox = x_t[0] + np.cos(ang) * dist
         oy = x_t[1] + np.sin(ang) * dist
         ix_t = ((x_t[0:2]-self.origin) * self.resolution).astype(int)
         data = np.ones((self.width*self.resolution, self.height*self.resolution)) * (1-self.occPrior)
-        for (x, y) in zip(ox, oy):
+        for (x, y, d) in zip(ox, oy, dist):
             # x coordinate of the detection in grid frame
             ix = int(round((x - self.origin[0]) * self.resolution))
             # y coordinate of the detection in grid frame
@@ -38,10 +40,11 @@ class sensorModel:
             laser_beams = bresenham((ix_t[0], ix_t[1]), (ix, iy))  # line form the lidar to the occupied point
             for laser_beam in laser_beams:
                 data[laser_beam[0]][laser_beam[1]] = self.invModel[0]  # free area
-            data[ix][iy] = self.invModel[1]  # occupied area 1.0
-            #data[ix + 1][iy] = 1.0  # extend the occupied area
-            #data[ix][iy + 1] = 1.0  # extend the occupied area
-            #data[ix + 1][iy + 1] = 1.0  # extend the occupied area
+            if d<self.range:
+                data[ix][iy] = self.invModel[1]  # occupied area 1.0
+                #data[ix + 1][iy] = 1.0  # extend the occupied area
+                #data[ix][iy + 1] = 1.0  # extend the occupied area
+                #data[ix + 1][iy + 1] = 1.0  # extend the occupied area
         return gridMap(self.origin, self.width, self.height, self.resolution, data)
 
 def bresenham(start, end):
@@ -101,7 +104,7 @@ def main():
     width = 150
     height = 50
     resolution = 2
-    range = 5
+    range = 50
     invModel = [0.1, 0.9]
     occPrior = 0.5
     sM = sensorModel(origin, width, height, resolution, range, invModel ,occPrior)
@@ -116,8 +119,12 @@ def main():
     #x_t = np.array((10,10,0))
     #z_t = np.array([[0,20]])
     print(x_t)
+    import time
+    start = time.time()
     gm = sM.generateGridMap(z_t, x_t)
+    print(time.time() - start)
     gm.plot()
+    
 
 if __name__ == '__main__':
     main()
