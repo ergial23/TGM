@@ -13,38 +13,29 @@ class sensorModel:
         self.occPrior = occPrior
 
     def generateGridMap(self, z_t, x_t):
-        """
-        Generate raycasted grid map from 2D sensor data
-        """
-
-        # I am missing to populate the data
-        """
-        data = np.zeros((self.width*self.resolution, self.height*self.resolution))
-        data[0][0] = 1
-        data[19][0] = 0.5
-        return gridMap(self.origin, self.width, self.height, self.resolution, data)
-        """
-
         ang, dist = z_t[:,0], z_t[:,1]
+        # Update measurement orientation with agent's pose
         ang = ang + x_t[2]
+        # Limit measurement distance to sensor range
         dist[dist>self.range] = self.range
+        # Compute detection points on global frame
         ox = x_t[0] + np.cos(ang) * dist
         oy = x_t[1] + np.sin(ang) * dist
+        # Compute matrix index for ego pose
         ix_t = ((x_t[0:2]-self.origin) * self.resolution).astype(int)
+        # Initialize matrix with prior
         data = np.ones((self.width*self.resolution, self.height*self.resolution)) * (1-self.occPrior)
         for (x, y, d) in zip(ox, oy, dist):
-            # x coordinate of the detection in grid frame
+            # Compute the matrix index for detection points
             ix = int(round((x - self.origin[0]) * self.resolution))
-            # y coordinate of the detection in grid frame
             iy = int(round((y - self.origin[1]) * self.resolution))
-            laser_beams = bresenham((ix_t[0], ix_t[1]), (ix, iy))  # line form the lidar to the occupied point
+            # Mark as free the cells along the ray
+            laser_beams = bresenham((ix_t[0], ix_t[1]), (ix, iy))
             for laser_beam in laser_beams:
-                data[laser_beam[0]][laser_beam[1]] = self.invModel[0]  # free area
+                data[laser_beam[0]][laser_beam[1]] = self.invModel[0]
+            # If the detection is within the range, mark it as occupied
             if d<self.range:
-                data[ix][iy] = self.invModel[1]  # occupied area 1.0
-                #data[ix + 1][iy] = 1.0  # extend the occupied area
-                #data[ix][iy + 1] = 1.0  # extend the occupied area
-                #data[ix + 1][iy + 1] = 1.0  # extend the occupied area
+                data[ix][iy] = self.invModel[1]
         return gridMap(self.origin, self.width, self.height, self.resolution, data)
 
 def bresenham(start, end):
@@ -81,23 +72,6 @@ def bresenham(start, end):
         points.reverse()
     points = np.array(points)
     return points
-    
-def file_lidar(f):
-    """
-    Reading LIDAR laser beams (angles and corresponding distance data)
-    """
-    with open(f) as data:
-        measures = [line.split(",") for line in data]
-    #angles = []
-    #distances = []
-    #for measure in measures:
-    #    angles.append(float(measure[0]))
-    #    distances.append(float(measure[1]))
-    #angles = np.array(angles)
-    #distances = np.array(distances)
-    #return angles, distances
-    z_t = np.array(measures)
-    return z_t
 
 def main():
     origin = [0,0]
@@ -109,16 +83,12 @@ def main():
     occPrior = 0.5
     sM = sensorModel(origin, width, height, resolution, range, invModel ,occPrior)
 
-    #z_t = file_lidar("../logs/sim_corridor/z_1.csv")
     with open("../logs/sim_corridor/z_100.csv") as data:
         z_t = np.array([line.split(",") for line in data]).astype(float)
     
     with open("../logs/sim_corridor/x_100.csv") as data:
         x_t = np.array([line.split(",") for line in data]).astype(float)[0]
 
-    #x_t = np.array((10,10,0))
-    #z_t = np.array([[0,20]])
-    print(x_t)
     import time
     start = time.time()
     gm = sM.generateGridMap(z_t, x_t)
