@@ -3,12 +3,12 @@ from gridMap import gridMap
 import time
 
 class sensorModel:
-    def __init__ (self, origin, width, height, resolution, range, invModel ,occPrior):
+    def __init__ (self, origin, width, height, resolution, sensorRange, invModel ,occPrior):
         self.origin = origin
         self.width = width
         self.height = height
         self.resolution = resolution
-        self.range = range
+        self.sensorRange = sensorRange
         self.invModel = invModel
         self.occPrior = occPrior
 
@@ -17,7 +17,7 @@ class sensorModel:
         # Update measurement orientation with agent's pose
         ang = ang + x_t[2]
         # Limit measurement distance to sensor range
-        dist[dist>self.range] = self.range
+        dist[dist>self.sensorRange] = self.sensorRange
         # Compute detection points on global frame
         ox = x_t[0] + np.cos(ang) * dist
         oy = x_t[1] + np.sin(ang) * dist
@@ -34,7 +34,7 @@ class sensorModel:
             for laser_beam in laser_beams:
                 data[laser_beam[0]][laser_beam[1]] = self.invModel[0]
             # If the detection is within the range, mark it as occupied
-            if d<self.range:
+            if d<self.sensorRange:
                 data[ix][iy] = self.invModel[1]
         return gridMap(self.origin, self.width, self.height, self.resolution, data)
 
@@ -78,10 +78,10 @@ def main():
     width = 150
     height = 50
     resolution = 2
-    range = 50
+    sensorRange = 50
     invModel = [0.1, 0.9]
     occPrior = 0.5
-    sM = sensorModel(origin, width, height, resolution, range, invModel ,occPrior)
+    sM = sensorModel(origin, width, height, resolution, sensorRange, invModel ,occPrior)
 
     with open("../logs/sim_corridor/z_100.csv") as data:
         z_t = np.array([line.split(",") for line in data]).astype(float)
