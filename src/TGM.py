@@ -82,30 +82,38 @@ class TGM:
 
         return predStaticMap, predDynamicMap, predWeatherMap
     
-    def plotStaticMap(self):
+    def plotStaticMap(self, fig=None):
+        if fig is None:
+            fig = plt.figure()
         I = 1 - np.transpose(self.staticMap)
-        plt.imshow(I, cmap="gray", vmin=0, vmax=1, origin ="lower",
+        ax = fig.add_subplot(1, 1, 1)
+        ax.imshow(I, cmap="gray", vmin=0, vmax=1, origin ="lower",
                    extent=(self.origin[0], self.origin[0] + self.width,
                            self.origin[1], self.origin[1] + self.height))
         plt.show()
 
-    def plotDynamicMap(self):
+    def plotDynamicMap(self, fig=None):
+        if fig is None:
+            fig = plt.figure()
         I = 1 - np.transpose(self.dynamicMap)
-        plt.imshow(I, cmap="gray", vmin=0, vmax=1, origin ="lower",
+        ax = fig.add_subplot(1, 1, 1)
+        ax.imshow(I, cmap="gray", vmin=0, vmax=1, origin ="lower",
                    extent=(self.origin[0], self.origin[0] + self.width,
                            self.origin[1], self.origin[1] + self.height))
         plt.show()
 
-    def plotCombinedMap(self):
+    def plotCombinedMap(self, fig=None):
+        if fig is None:
+            fig = plt.figure()
         I = np.zeros((self.height*self.resolution, self.width*self.resolution, 3))
         I[:,:,0] = 1 - np.transpose(1.0*self.staticMap + 0.0*self.dynamicMap + 1.0*self.weatherMap)
         I[:,:,1] = 1 - np.transpose(0.5*self.staticMap + 0.5*self.dynamicMap + 0.0*self.weatherMap)
         I[:,:,2] = 1 - np.transpose(0.0*self.staticMap + 1.0*self.dynamicMap + 1.0*self.weatherMap)
-        #I = 1 - np.transpose(self.staticMap + self.dynamicMap)
-        plt.imshow(I, vmin=0, vmax=1, origin ="lower",
+        ax = fig.add_subplot(1, 1, 1)
+        ax.imshow(I, vmin=0, vmax=1, origin ="lower",
                    extent=(self.origin[0], self.origin[0] + self.width,
                            self.origin[1], self.origin[1] + self.height))
-        plt.show()
+        plt.pause(0.1)
     
 def conv2prior(map, convShape, prior):
     # Pad the map with the prior before making the convolution

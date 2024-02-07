@@ -1,6 +1,7 @@
 from sensorModel import sensorModel
 from TGM import TGM
 import numpy as np
+import matplotlib.pyplot as plt
 
 def run():
     # PARAMETERS
@@ -26,6 +27,7 @@ def run():
     tgm = TGM(origin, width, height, resolution, staticPrior, dynamicPrior, weatherPrior, maxVelocity, saturationLimits)
 
     # Main loop
+    fig= plt.figure()
     for i in range(1, simHorizon):
         # Get sensor data and robot pose
         with open("../logs/sim_corridor/z_" + str(i) + ".csv") as data:
@@ -36,13 +38,14 @@ def run():
 
         # Generate instantaneous grid map
         gm = sM.generateGridMap(z_t, x_t)
-        gm.plot()
+        #gm.plot()
 
         # Update TGM
         tgm.update(gm, x_t)
 
         # Plot maps
-        tgm.plotCombinedMap()
+        fig.clear()
+        tgm.plotCombinedMap(fig)
 
 
 if __name__ == '__main__':
