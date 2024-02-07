@@ -1,5 +1,6 @@
 import numpy as np
 from gridMap import gridMap
+from lidarScan import lidarScan
 import time
 
 class sensorModel:
@@ -13,7 +14,8 @@ class sensorModel:
         self.occPrior = occPrior
 
     def generateGridMap(self, z_t, x_t):
-        ang, dist = z_t[:,0], z_t[:,1]
+        assert isinstance(z_t, lidarScan)
+        ang, dist = z_t.angles, z_t.ranges
         # Update measurement orientation with agent's pose
         ang = ang + x_t[2]
         # Limit measurement distance to sensor range
@@ -85,12 +87,11 @@ def main():
     sM = sensorModel(origin, width, height, resolution, sensorRange, invModel ,occPrior)
 
     with open("../logs/sim_corridor/z_100.csv") as data:
-        z_t = np.array([line.split(",") for line in data]).astype(float)
+        z_t = lidarScan(*np.array([line.split(",") for line in data]).astype(float).T)
     
     with open("../logs/sim_corridor/x_100.csv") as data:
         x_t = np.array([line.split(",") for line in data]).astype(float)[0]
 
-    import time
     start = time.time()
     gm = sM.generateGridMap(z_t, x_t)
     print(time.time() - start)

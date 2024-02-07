@@ -1,4 +1,5 @@
 from sensorModel import sensorModel
+from lidarScan import lidarScan
 from TGM import TGM
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,10 +32,11 @@ def run():
     # Main loop
     fig= plt.figure()
     for i in range(1, simHorizon):
-        # Get sensor data and robot pose
+        # Get sensor data
         with open(logPath + "z_" + str(i) + ".csv") as data:
-            z_t = np.array([line.split(",") for line in data]).astype(float)
-        
+            z_t = lidarScan(*np.array([line.split(",") for line in data]).astype(float).T)
+
+        # Get robot pose
         with open(logPath + "x_" + str(i) + ".csv") as data:
             x_t = np.array([line.split(",") for line in data]).astype(float)[0]
 
