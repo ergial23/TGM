@@ -30,9 +30,10 @@ class sensorModel:
             ix = int(round((x - self.origin[0]) * self.resolution))
             iy = int(round((y - self.origin[1]) * self.resolution))
             # Mark as free the cells along the ray
-            laser_beams = bresenham((ix_t[0], ix_t[1]), (ix, iy))
-            for laser_beam in laser_beams:
-                data[laser_beam[0]][laser_beam[1]] = self.invModel[0]
+            points = bresenham((ix_t[0], ix_t[1]), (ix, iy))
+            for point in points:
+                if data[point[0]][point[1]] != self.invModel[1]:
+                    data[point[0]][point[1]] = self.invModel[0]
             # If the detection is within the range, mark it as occupied
             if d<self.sensorRange:
                 data[ix][iy] = self.invModel[1]
