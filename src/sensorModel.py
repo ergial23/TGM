@@ -24,7 +24,7 @@ class sensorModel:
         # Compute matrix index for ego pose
         ix_t = ((x_t[0:2]-self.origin) * self.resolution).astype(int)
         # Initialize matrix with prior
-        data = np.ones((self.width*self.resolution, self.height*self.resolution)) * (1-self.occPrior)
+        data = np.ones((self.width*self.resolution, self.height*self.resolution)) * self.occPrior
         for (x, y, d) in zip(ox, oy, dist):
             # Compute the matrix index for detection points
             ix = int(round((x - self.origin[0]) * self.resolution))
