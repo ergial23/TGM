@@ -32,6 +32,8 @@ class TGM:
         self.satLowD = saturationLimits[2]
         self.satHighD = saturationLimits[3]
 
+        self.x_t = []
+
     def update(self, instGridMap, x_t):
         assert isinstance(instGridMap, gridMap)
         instMap = instGridMap.data
@@ -90,6 +92,8 @@ class TGM:
         ax.imshow(I, cmap="gray", vmin=0, vmax=1, origin ="lower",
                    extent=(self.origin[0], self.origin[0] + self.width,
                            self.origin[1], self.origin[1] + self.height))
+        if self.x_t is not None and len(self.x_t) != 0:
+            plt.plot(self.x_t[0], self.x_t[1], 'ro', color='red')
         plt.show()
 
     def plotDynamicMap(self, fig=None):
@@ -100,6 +104,8 @@ class TGM:
         ax.imshow(I, cmap="gray", vmin=0, vmax=1, origin ="lower",
                    extent=(self.origin[0], self.origin[0] + self.width,
                            self.origin[1], self.origin[1] + self.height))
+        if self.x_t is not None and len(self.x_t) != 0:
+            plt.plot(self.x_t[0], self.x_t[1], 'ro', color='red')
         plt.show()
 
     def plotCombinedMap(self, fig=None):
@@ -113,6 +119,8 @@ class TGM:
         ax.imshow(I, vmin=0, vmax=1, origin ="lower",
                    extent=(self.origin[0], self.origin[0] + self.width,
                            self.origin[1], self.origin[1] + self.height))
+        if self.x_t is not None and len(self.x_t) != 0:
+            plt.plot(self.x_t[0], self.x_t[1], 'ro', color='red')
         plt.pause(0.1)
     
 def conv2prior(map, convShape, prior):
