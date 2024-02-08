@@ -1,13 +1,27 @@
 from sensorModel import sensorModel
 from lidarScan import lidarScan
 from TGM import TGM
+from SLAM import lsqnl_matching
 import numpy as np
 import matplotlib.pyplot as plt
+
+def readLidarData(path, i):
+    with open(path + "z_" + str(i) + ".csv") as data:
+        z_t = lidarScan(*np.array([line.split(",") for line in data]).astype(float).T)
+    return z_t
+
+def readPoseData(path, i):
+    with open(path + "x_" + str(i) + ".csv") as data:
+        x_t = np.array([line.split(",") for line in data]).astype(float)[0]
+    return x_t
 
 def run():
     # PARAMETERS
 
-    logPath = "../logs/sim_corridor/"
+    isSLAM = False
+
+    path = "../logs/sim_corridor/"
+
     origin = [0,0]
     width = 150
     height = 50
@@ -33,12 +47,13 @@ def run():
     fig= plt.figure()
     for i in range(1, simHorizon):
         # Get sensor data
-        with open(logPath + "z_" + str(i) + ".csv") as data:
-            z_t = lidarScan(*np.array([line.split(",") for line in data]).astype(float).T)
+        z_t = readLidarData(path, i)
 
-        # Get robot pose
-        with open(logPath + "x_" + str(i) + ".csv") as data:
-            x_t = np.array([line.split(",") for line in data]).astype(float)[0]
+        # Compute robot pose with SLAM or get it from log
+        if (not isSLAM) or (i == 1):
+            x_t = readPoseData(path, i)
+        else:
+            x_t = lsqnl_matching(z_t, tgm.staticMap, x_t, sensorRange)
 
         # Generate instantaneous grid map
         gm = sM.generateGridMap(z_t, x_t)
