@@ -9,13 +9,10 @@ def lsqnl_matching(scan, map, x0, max_range):
     # Remove the no-return scans from scan
     lsq_scan = scan.removeNoReturn(max_range)
     lsq_map = map
-    lsq_max_range = max_range
-    options = {'maxiter': 500}
-    x = least_squares(lsq_fun, x0, max_nfev=500)
+    x = least_squares(lsq_fun, x0, max_nfev=500, args=(lsq_scan, lsq_map))
     return x
 
-def lsq_fun(relPose):
-    global lsq_scan, lsq_map, lsq_max_range
+def lsq_fun(relPose, lsq_scan, lsq_map):
     s = lsq_map.shape
     #res = lsq_map.Resolution
     res=2                                                                       # I NEED TO FIX THIS BEFORE COMMITTING
