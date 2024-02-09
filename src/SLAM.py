@@ -20,10 +20,10 @@ def lsq_fun(relPose):
     s = lsq_map.shape
     #res = lsq_map.Resolution
     res=2                                                                       # I NEED TO FIX THIS BEFORE COMMITTING
-    limit_x = s[1] / res
-    limit_y = s[0] / res
+    limit_x = s[0] / res
+    limit_y = s[1] / res
     cell_length = 1 / res
-    print(limit_x, limit_y, cell_length)
+    #print(limit_x, limit_y, cell_length)
 
     # Remove the no-return scans from lsq_scan
     #scan = np.column_stack([lsq_scan.rangles, lsq_scan.angles])
@@ -49,24 +49,21 @@ def lsq_fun(relPose):
     x = np.linspace(cell_length / 2, limit_x - cell_length / 2, lsq_map.shape[0])
     y = np.linspace(cell_length / 2, limit_y - cell_length / 2, lsq_map.shape[1])
     #print(x.shape, y.shape, lsq_map.shape)
-    interp = RegularGridInterpolator((x, y), np.flip(lsq_map), bounds_error=False, method='cubic', fill_value=0)
+    interp = RegularGridInterpolator((x, y), lsq_map, bounds_error=False, method='cubic', fill_value=0)
 
     cost = 1 - interp(transCart, method='cubic')
 
     # Plot the cost:
+    '''
     X, Y = np.meshgrid(x, y)
-
-
-    # X, Y = np.meshgrid(np.arange(cell_length / 2, limit_x - cell_length / 2, cell_length),
-    #                    np.arange(cell_length / 2, limit_y - cell_length / 2, cell_length))
     Xq, Yq = np.meshgrid(np.arange(cell_length / 2, limit_x - cell_length / 2, cell_length / 2),
                           np.arange(cell_length / 2, limit_y - cell_length / 2, cell_length / 2))
     Vq = 1 - interp((Xq, Yq), method='cubic')
-    # Vq = 1 - interp2d(X, Y, np.flip(lsq_map), Xq, Yq, method='cubic', fill_value=0)
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(Xq, Yq, Vq, edgecolor='none')
     ax.plot(transCart[:, 0], transCart[:, 1], cost, 'r.')
     plt.show()
+    '''
 
     return cost
