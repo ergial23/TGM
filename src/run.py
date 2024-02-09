@@ -18,7 +18,7 @@ def readPoseData(path, i):
 def run():
     # PARAMETERS
 
-    isSLAM = False
+    isSLAM = True
 
     path = "../logs/sim_corridor/"
 
@@ -53,7 +53,11 @@ def run():
         if (not isSLAM) or (i == 1):
             x_t = readPoseData(path, i)
         else:
+            x_t = readPoseData(path, i)
             x_t = lsqnl_matching(z_t, tgm.staticMap, x_t, sensorRange)
+            x_t = x_t.x
+
+        print(x_t)
 
         # Generate instantaneous grid map
         gm = sM.generateGridMap(z_t, x_t)
