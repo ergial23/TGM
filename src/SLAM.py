@@ -4,21 +4,16 @@ from scipy.optimize import least_squares
 import matplotlib.pyplot as plt
 from lidarScan import lidarScan
 
-def lsqnl_matching(scan, map, x0, max_range):
-    global lsq_scan, lsq_map, lsq_max_range
+def lsqnl_matching(scan, lsq_map, x0, max_range):
     # Remove the no-return scans from scan
     lsq_scan = scan.removeNoReturn(max_range)
-    lsq_map = map
     x = least_squares(lsq_fun, x0, max_nfev=500, args=(lsq_scan, lsq_map))
     return x
 
 def lsq_fun(relPose, lsq_scan, lsq_map):
-    s = lsq_map.shape
-    #res = lsq_map.Resolution
-    res=2                                                                       # I NEED TO FIX THIS BEFORE COMMITTING
-    limit_x = s[0] / res
-    limit_y = s[1] / res
-    cell_length = 1 / res
+    limit_x = lsq_map.width
+    limit_y = lsq_map.height
+    cell_length = 1 / lsq_map.resolution
     #print(limit_x, limit_y, cell_length)
 
     # Remove the no-return scans from lsq_scan
@@ -42,10 +37,10 @@ def lsq_fun(relPose, lsq_scan, lsq_map):
     #x = np.arange(cell_length / 2, limit_x - cell_length / 2, cell_length)
     #print(x)
     #y = np.arange(cell_length / 2, limit_y - cell_length / 2, cell_length)
-    x = np.linspace(cell_length / 2, limit_x - cell_length / 2, lsq_map.shape[0])
-    y = np.linspace(cell_length / 2, limit_y - cell_length / 2, lsq_map.shape[1])
+    x = np.linspace(cell_length / 2, limit_x - cell_length / 2, lsq_map.data.shape[0])
+    y = np.linspace(cell_length / 2, limit_y - cell_length / 2, lsq_map.data.shape[1])
     #print(x.shape, y.shape, lsq_map.shape)
-    interp = RegularGridInterpolator((x, y), lsq_map, bounds_error=False, method='cubic', fill_value=0)
+    interp = RegularGridInterpolator((x, y), lsq_map.data, bounds_error=False, method='cubic', fill_value=0)
 
     cost = 1 - interp(transCart, method='cubic')
 

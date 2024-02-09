@@ -84,6 +84,9 @@ class TGM:
 
         return predStaticMap, predDynamicMap, predWeatherMap
     
+    def computeStaticGridMap(self):
+        return gridMap(self.origin, self.width, self.height, self.resolution, self.staticMap)
+    
     def plotStaticMap(self, fig=None):
         if fig is None:
             fig = plt.figure()

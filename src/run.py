@@ -1,5 +1,6 @@
 from sensorModel import sensorModel
 from lidarScan import lidarScan
+from gridMap import gridMap
 from TGM import TGM
 from SLAM import lsqnl_matching
 import numpy as np
@@ -54,7 +55,7 @@ def run():
             x_t = readPoseData(path, i)
         else:
             x_t = readPoseData(path, i)
-            x_t = lsqnl_matching(z_t, tgm.staticMap, x_t, sensorRange)
+            x_t = lsqnl_matching(z_t, tgm.computeStaticGridMap(), x_t, sensorRange)
             x_t = x_t.x
 
         print(x_t)
