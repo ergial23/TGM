@@ -11,9 +11,9 @@ class lidarScan:
         return np.column_stack([self.ranges * np.cos(self.angles), self.ranges * np.sin(self.angles)])
     
     def removeNoReturn(self, maxRange):
-        self.angles = self.angles[self.ranges < maxRange]
-        self.ranges = self.ranges[self.ranges < maxRange]
-        self.numReadings = len(self.ranges)
+        angles = self.angles[self.ranges < maxRange]
+        ranges = self.ranges[self.ranges < maxRange]
+        return lidarScan(angles, ranges)
 
     def computeRelativeCartesian(self, relPose):
         angles = self.angles + relPose[2]

@@ -7,8 +7,7 @@ from lidarScan import lidarScan
 def lsqnl_matching(scan, map, x0, max_range):
     global lsq_scan, lsq_map, lsq_max_range
     # Remove the no-return scans from scan
-    scan.removeNoReturn(max_range)
-    lsq_scan = scan
+    lsq_scan = scan.removeNoReturn(max_range)
     lsq_map = map
     lsq_max_range = max_range
     options = {'maxiter': 500}
