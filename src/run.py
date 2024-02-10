@@ -32,7 +32,8 @@ def run():
     dynamicPrior = 0.3
     weatherPrior = 0.01
     maxVelocity = 1/resolution
-    saturationLimits = [0.001, 0.999, 0.001, 0.999]
+    saturationLimits = [0, 1, 0, 1] # Use this for SLAM
+    #saturationLimits = [0.001, 0.999, 0.001, 0.999]
 
     sensorRange = 50
     invModel = [0.1, 0.9]
@@ -51,12 +52,10 @@ def run():
         z_t = readLidarData(path, i)
 
         # Compute robot pose with SLAM or get it from log
-        if (not isSLAM) or (i == 1):
+        if (not isSLAM) or (i == 1) or (i == 2) or (i == 3):
             x_t = readPoseData(path, i)
         else:
-            x_t = readPoseData(path, i)
-            x_t = lsqnl_matching(z_t, tgm.computeStaticGridMap(), x_t, sensorRange)
-            x_t = x_t.x
+            x_t = lsqnl_matching(z_t, tgm.computeStaticGridMap(), x_t, sensorRange).x
 
         print(x_t)
 
