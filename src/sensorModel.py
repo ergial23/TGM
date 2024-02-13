@@ -34,11 +34,17 @@ class sensorModel:
             # Mark as free the cells along the ray
             points = bresenham((ix_t[0], ix_t[1]), (ix, iy))
             for point in points:
-                if data[point[0]][point[1]] != self.invModel[1]:
-                    data[point[0]][point[1]] = self.invModel[0]
+                try:
+                    if data[point[0]][point[1]] != self.invModel[1]:
+                        data[point[0]][point[1]] = self.invModel[0]
+                except:
+                    pass
             # If the detection is within the range, mark it as occupied
             if d<self.sensorRange:
-                data[ix][iy] = self.invModel[1]
+                try:
+                    data[ix][iy] = self.invModel[1]
+                except:
+                    pass
         return gridMap(self.origin, self.width, self.height, self.resolution, data)
 
 def bresenham(start, end):
