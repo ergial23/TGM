@@ -124,7 +124,7 @@ class TGM:
                            self.origin[1], self.origin[1] + self.height))
         if self.x_t is not None and len(self.x_t) != 0:
             plt.plot(self.x_t[0], self.x_t[1], 'ro')
-        plt.pause(0.1)
+        plt.pause(0.01)
     
 def conv2prior(map, convShape, prior):
     # Pad the map with the prior before making the convolution

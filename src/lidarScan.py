@@ -24,4 +24,25 @@ class lidarScan:
     def plot(self, ax=None):
         if ax is None:
             ax = plt.gca()
-        ax.plot(self.Cartesian[:, 0], self.Cartesian[:, 1], 'r.')
+        ax.plot(self.computeCartesian()[:, 0], self.computeCartesian()[:, 1], 'r.')
+        ax.axis('equal')
+        plt.show()
+
+class lidarScan3D:
+    def __init__(self, points3D):
+        self.points3D = points3D
+        self.numReadings = len(points3D)
+
+    def removeGround(self, groundThreshold):
+        return lidarScan3D(self.points3D[self.points3D[:, 2] > groundThreshold])
+    
+    def convertTo2D(self):
+        return lidarScan(np.arctan2(self.points3D[:, 1], self.points3D[:, 0]), np.sqrt(self.points3D[:, 0]**2 + self.points3D[:, 1]**2))
+    
+    def plot(self, ax=None):
+        if ax is None:
+            ax = plt.gca()
+        ax = plt.axes(projection='3d')  # Add this line to create a 3D projection
+        ax.scatter(self.points3D[:, 0], self.points3D[:, 1], self.points3D[:,2], 'r')
+        ax.axis('equal')
+        plt.show()
