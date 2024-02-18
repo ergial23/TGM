@@ -15,7 +15,7 @@ def readLidarData(path, i):
 def readLidarData3D(path, i):
     with open(path + "z_" + str(i) + ".csv") as data:
         z_t_3D = lidarScan3D(np.array([line.split(",") for line in data]).astype(float))
-        z_t = z_t_3D.removeGround(-0.5).convertTo2D()
+        z_t = z_t_3D.removeGround(0).convertTo2D()
     return z_t
 
 def readPoseData(path, i):
@@ -32,7 +32,7 @@ def run():
     is3D = True
 
     #path = "../logs/sim_corridor/"
-    path = "../logs/2024-02-13-10-35-56/"
+    path = "../logs/2024-02-13-10-45-46/"
 
     origin = [0,0]
     width = 150
@@ -68,8 +68,13 @@ def run():
             z_t = readLidarData(path, i)
 
         # Compute robot pose with SLAM or get it from log
-        if (not isSLAM) or (i <= numTimeStepsSLAM):
+        if not isSLAM:
             x_t = readPoseData(path, i)
+        elif i <= numTimeStepsSLAM:
+            try:
+                x_t = readPoseData(path, i)
+            except:
+                x_t = np.array([width/2, height/2, 0])
         else:
             x_t = lsqnl_matching(z_t, tgm.computeStaticGridMap(), x_t, sensorRange).x
 
