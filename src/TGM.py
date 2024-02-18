@@ -111,7 +111,7 @@ class TGM:
             plt.plot(self.x_t[0], self.x_t[1], 'ro')
         plt.show()
 
-    def plotCombinedMap(self, fig=None):
+    def plotCombinedMap(self, fig=None, saveImg=False, imgName=''):
         if fig is None:
             fig = plt.figure()
         I = np.zeros((self.height*self.resolution, self.width*self.resolution, 3))
@@ -124,6 +124,8 @@ class TGM:
                            self.origin[1], self.origin[1] + self.height))
         if self.x_t is not None and len(self.x_t) != 0:
             plt.plot(self.x_t[0], self.x_t[1], 'ro')
+            if saveImg:
+                plt.savefig(imgName + '.png')
         plt.pause(0.01)
     
 def conv2prior(map, convShape, prior):

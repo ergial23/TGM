@@ -6,6 +6,8 @@ from SLAM import lsqnl_matching
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import subprocess
+import os
 
 def readLidarData(path, i):
     with open(path + "z_" + str(i) + ".csv") as data:
@@ -29,10 +31,12 @@ def run():
     isSLAM = True
     numTimeStepsSLAM = 3
 
-    is3D = True
+    is3D = False
 
-    #path = "../logs/sim_corridor/"
-    path = "../logs/2024-02-13-10-45-46/"
+    saveVideo = True
+
+    logID = "sim_corridor"
+    path = "../logs/" + logID + "/"
 
     origin = [0,0]
     width = 150
@@ -50,7 +54,7 @@ def run():
     invModel = [0.1, 0.9]
     occPrior = staticPrior + dynamicPrior + weatherPrior
 
-    simHorizon = 300
+    simHorizon = 521
 
     # Create Sensor Model and TGM
     sM = sensorModel(origin, width, height, resolution, sensorRange, invModel ,occPrior)
@@ -88,9 +92,15 @@ def run():
 
         # Plot maps
         fig.clear()
-        tgm.plotCombinedMap(fig)
+        tgm.plotCombinedMap(fig, saveImg=saveVideo, imgName='../videos/frame_' + str(i))
         print('Time: ' + str(time.time() - start))
 
+    # Save video
+    if saveVideo:
+        subprocess.call(['ffmpeg', '-framerate', '8', '-i', '../videos/frame_%d.png', '-r', '10', '-pix_fmt', 'yuv420p','../videos/' + logID + '.mp4'])
+        for file in os.listdir('../videos/'):
+            if file.endswith('.png'):
+                os.remove('../videos/' + file)
 
 if __name__ == '__main__':
     run()
