@@ -20,8 +20,11 @@ def lsq_fun(relPose, lsq_scan, lsq_map):
     #x = np.linspace(cell_length / 2, limit_x - cell_length / 2, lsq_map.data.shape[0])
     #y = np.linspace(cell_length / 2, limit_y - cell_length / 2, lsq_map.data.shape[1])
     
-    x = np.linspace(0, limit_x, lsq_map.data.shape[0])
-    y = np.linspace(0, limit_y, lsq_map.data.shape[1])
+    #x = np.linspace(0, limit_x, lsq_map.data.shape[0])
+    #y = np.linspace(0, limit_y, lsq_map.data.shape[1])
+
+    x = np.linspace(0, limit_x - cell_length, lsq_map.data.shape[0])
+    y = np.linspace(0, limit_y - cell_length, lsq_map.data.shape[1])
 
     transCart = lsq_scan.computeRelativeCartesian(relPose)
 
