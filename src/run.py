@@ -31,16 +31,16 @@ def run():
     isSLAM = True
     numTimeStepsSLAM = 3
 
-    is3D = False
+    is3D = True
 
-    saveVideo = True
+    saveVideo = False
 
-    logID = "sim_corridor"
+    logID = "2024-02-13-10-45-46"
     path = "../logs/" + logID + "/"
 
     origin = [0,0]
     width = 150
-    height = 50
+    height = 150
     resolution = 2
 
     staticPrior = 0.3
@@ -54,7 +54,7 @@ def run():
     invModel = [0.1, 0.9]
     occPrior = staticPrior + dynamicPrior + weatherPrior
 
-    simHorizon = 521
+    simHorizon = 350
 
     # Create Sensor Model and TGM
     sM = sensorModel(origin, width, height, resolution, sensorRange, invModel ,occPrior)
@@ -67,7 +67,7 @@ def run():
 
         # Get sensor data
         if is3D:
-            z_t = readLidarData3D(path, i)
+            z_t = readLidarData3D(path, i).voxelGridFilter(1/resolution)
         else:
             z_t = readLidarData(path, i)
 

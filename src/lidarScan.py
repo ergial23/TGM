@@ -28,6 +28,31 @@ class lidarScan:
         ax.axis('equal')
         plt.show()
 
+    def voxelGridFilter(self, voxel_size):
+        points = self.computeCartesian()
+        # Determine the grid indices for each point
+        grid_indices = np.floor(points / voxel_size).astype(int)
+
+        # Create a dictionary to store points in each voxel
+        voxel_dict = {}
+        for i, idx in enumerate(grid_indices):
+            key = tuple(idx)
+            if key not in voxel_dict:
+                voxel_dict[key] = []
+            voxel_dict[key].append(points[i])
+
+        # Create a list to store the downsampled points
+        downsampled_points = []
+
+        # Iterate through each voxel and average the points inside
+        for key, points in voxel_dict.items():
+            average_point = np.mean(points, axis=0)
+            downsampled_points.append(average_point)
+
+        downsampled_points = np.array(downsampled_points)
+
+        return lidarScan(np.arctan2(downsampled_points[:, 1], downsampled_points[:, 0]), np.sqrt(downsampled_points[:, 0]**2 + downsampled_points[:, 1]**2))
+
 class lidarScan3D:
     def __init__(self, points3D):
         self.points3D = points3D
