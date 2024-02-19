@@ -61,6 +61,9 @@ class lidarScan3D:
     def removeGround(self, groundThreshold):
         return lidarScan3D(self.points3D[self.points3D[:, 2] > groundThreshold])
     
+    def removeSky(self, skyThreshold):
+        return lidarScan3D(self.points3D[self.points3D[:, 2] < skyThreshold])
+    
     def convertTo2D(self):
         return lidarScan(np.arctan2(self.points3D[:, 1], self.points3D[:, 0]), np.sqrt(self.points3D[:, 0]**2 + self.points3D[:, 1]**2))
     

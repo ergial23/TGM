@@ -17,7 +17,7 @@ def readLidarData(path, i):
 def readLidarData3D(path, i):
     with open(path + "z_" + str(i) + ".csv") as data:
         z_t_3D = lidarScan3D(np.array([line.split(",") for line in data]).astype(float))
-        z_t = z_t_3D.removeGround(0).convertTo2D()
+        z_t = z_t_3D.removeGround(0).removeSky(1).convertTo2D()
     return z_t
 
 def readPoseData(path, i):
