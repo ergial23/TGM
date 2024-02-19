@@ -35,7 +35,7 @@ def run():
 
     saveVideo = False
 
-    logID = "2024-02-13-10-45-46"
+    logID = "2024-02-13-10-36-09"
     path = "../logs/" + logID + "/"
 
     origin = [0,0]
@@ -54,6 +54,7 @@ def run():
     invModel = [0.1, 0.9]
     occPrior = staticPrior + dynamicPrior + weatherPrior
 
+    initialTimeStep = 350
     simHorizon = 350
 
     # Create Sensor Model and TGM
@@ -62,7 +63,7 @@ def run():
 
     # Main loop
     fig= plt.figure()
-    for i in range(1, simHorizon):
+    for i in range(initialTimeStep, initialTimeStep + simHorizon):
         start = time.time()
 
         # Get sensor data
@@ -74,7 +75,7 @@ def run():
         # Compute robot pose with SLAM or get it from log
         if not isSLAM:
             x_t = readPoseData(path, i)
-        elif i <= numTimeStepsSLAM:
+        elif i <= initialTimeStep + numTimeStepsSLAM:
             try:
                 x_t = readPoseData(path, i)
             except:
