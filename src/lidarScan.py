@@ -28,6 +28,13 @@ class lidarScan:
         ax.axis('equal')
         plt.show()
 
+    def removeClosePoints(self, minRange):
+        return lidarScan(self.angles[self.ranges > minRange], self.ranges[self.ranges > minRange])
+
+    def orderByAngle(self):
+        idx = np.argsort(self.angles)
+        return lidarScan(self.angles[idx], self.ranges[idx])
+
     def voxelGridFilter(self, voxel_size):
         points = self.computeCartesian()
         # Determine the grid indices for each point

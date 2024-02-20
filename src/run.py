@@ -11,8 +11,8 @@ def run():
     # PARAMETERS
     logID = "2024-02-13-10-36-09"
     is3D = True
-    initialTimeStep = 3000
-    simHorizon = 50
+    initialTimeStep = 1
+    simHorizon = 350
     
     isSLAM = True
     numTimeStepsSLAM = 1
@@ -50,7 +50,7 @@ def run():
         # Import sensor data
         if is3D:
             z_t_3D = readLidarData3D(logPath, i)
-            z_t = z_t_3D.removeGround(-0.5).removeSky(0.5).convertTo2D().voxelGridFilter(1/resolution)
+            z_t = z_t_3D.removeGround(-0.5).removeSky(0).convertTo2D().removeClosePoints(3).voxelGridFilter(1/resolution).orderByAngle()
         else:
             z_t = readLidarData(logPath, i)
         timeData = time.time()

@@ -45,6 +45,18 @@ class sensorModel:
                     data[ix][iy] = self.invModel[1]
                 except:
                     pass
+        for i in range(ox.size):
+            ix1 = int(round((ox[i] - self.origin[0]) * self.resolution))
+            iy1 = int(round((oy[i] - self.origin[1]) * self.resolution))
+            ix2 = int(round((ox[i-1] - self.origin[0]) * self.resolution))
+            iy2 = int(round((oy[i-1] - self.origin[1]) * self.resolution))
+            points = bresenham((ix1, iy1), (ix2, iy2))
+            for point in points:
+                try:
+                    if data[point[0]][point[1]] == self.invModel[0]:
+                        data[point[0]][point[1]] = self.occPrior
+                except:
+                    pass
         return gridMap(self.origin, self.width, self.height, self.resolution, data)
 
 def bresenham(start, end):
@@ -92,10 +104,10 @@ def main():
     occPrior = 0.5
     sM = sensorModel(origin, width, height, resolution, sensorRange, invModel ,occPrior)
 
-    with open("../logs/sim_corridor/z_100.csv") as data:
+    with open("./logs/sim_corridor/z_100.csv") as data:
         z_t = lidarScan(*np.array([line.split(",") for line in data]).astype(float).T)
     
-    with open("../logs/sim_corridor/x_100.csv") as data:
+    with open("./logs/sim_corridor/x_100.csv") as data:
         x_t = np.array([line.split(",") for line in data]).astype(float)[0]
 
     start = time.time()
