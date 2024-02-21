@@ -15,6 +15,8 @@ def lsqnl_matching(scan, lsq_map, x0, max_range):
 def lsq_fun(relPose, lsq_scan, lsq_map):
     limit_x = lsq_map.width
     limit_y = lsq_map.height
+    origin_x = lsq_map.origin[0]
+    origin_y = lsq_map.origin[1]
     cell_length = 1 / lsq_map.resolution
 
     #x = np.linspace(cell_length / 2, limit_x - cell_length / 2, lsq_map.data.shape[0])
@@ -23,8 +25,8 @@ def lsq_fun(relPose, lsq_scan, lsq_map):
     #x = np.linspace(0, limit_x, lsq_map.data.shape[0])
     #y = np.linspace(0, limit_y, lsq_map.data.shape[1])
 
-    x = np.linspace(0, limit_x - cell_length, lsq_map.data.shape[0])
-    y = np.linspace(0, limit_y - cell_length, lsq_map.data.shape[1])
+    x = np.linspace(origin_x, origin_x + limit_x - cell_length, lsq_map.data.shape[0])
+    y = np.linspace(origin_y, origin_y + limit_y - cell_length, lsq_map.data.shape[1])
 
     transCart = lsq_scan.computeRelativeCartesian(relPose)
 
