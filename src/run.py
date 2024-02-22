@@ -9,10 +9,10 @@ from SLAM import lsqnl_matching
 
 def run():
     # PARAMETERS
-    logID = "2024-02-13-10-36-09"
+    logID = '2024-02-13-10-36-09'
     is3D = True
     initialTimeStep = 1
-    simHorizon = 350
+    simHorizon = 521
     
     isSLAM = True
     numTimeStepsSLAM = 1
@@ -20,8 +20,8 @@ def run():
     saveVideo = True
     
     origin = [0,0]
-    width = 150
-    height = 150
+    width = 300
+    height = 300
     resolution = 2
     
     staticPrior = 0.3
@@ -29,6 +29,7 @@ def run():
     weatherPrior = 0.01
     maxVelocity = 1/resolution
     saturationLimits = [0, 1, 0, 1]
+    fftConv = False
     
     sensorRange = 50
     invModel = [0.1, 0.9]
@@ -40,7 +41,7 @@ def run():
 
     # Create Sensor Model and TGM
     sM = sensorModel(origin, width, height, resolution, sensorRange, invModel ,occPrior)
-    tgm = TGM(origin, width, height, resolution, staticPrior, dynamicPrior, weatherPrior, maxVelocity, saturationLimits)
+    tgm = TGM(origin, width, height, resolution, staticPrior, dynamicPrior, weatherPrior, maxVelocity, saturationLimits, fftConv)
 
     # Main loop
     fig= plt.figure()

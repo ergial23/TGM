@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gridMap import gridMap
 from skimage.morphology import disk
-from scipy.signal import convolve2d
+from scipy.signal import convolve2d, fftconvolve
 
 class TGM:
-    def __init__(self,origin, width, height, resolution, staticPrior, dynamicPrior, weatherPrior, maxVelocity, saturationLimits):
+    def __init__(self,origin, width, height, resolution, staticPrior, dynamicPrior, weatherPrior, maxVelocity, saturationLimits, fftConv = False):
         self.origin = origin
         self.width = width
         self.height = height
@@ -31,6 +31,8 @@ class TGM:
         self.satHighS = saturationLimits[1]
         self.satLowD = saturationLimits[2]
         self.satHighD = saturationLimits[3]
+
+        self.fftConv = fftConv
 
         self.x_t = []
 
@@ -75,8 +77,8 @@ class TGM:
         predStaticMap = self.staticMap
 
         dynamicStay = self.dynamicMap * self.D0
-        bounceBack = conv2prior(self.staticMap, self.convShape, self.staticPrior) * self.dynamicMap
-        dynamicMove = conv2prior(self.dynamicMap, self.convShape, self.dynamicPrior) * (1 - self.staticMap)
+        bounceBack = conv2prior(self.staticMap, self.convShape, self.staticPrior, self.fftConv) * self.dynamicMap
+        dynamicMove = conv2prior(self.dynamicMap, self.convShape, self.dynamicPrior, self.fftConv) * (1 - self.staticMap)
 
         predDynamicMap = dynamicStay + bounceBack + dynamicMove
 
@@ -128,14 +130,16 @@ class TGM:
                 plt.savefig(imgName + '.png')
         plt.pause(0.01)
     
-def conv2prior(map, convShape, prior):
+def conv2prior(map, convShape, prior, fftConv = False):
     # Pad the map with the prior before making the convolution
     sx, sy = convShape.shape
     px = (sx - 1) // 2
     py = (sy - 1) // 2
     paddedMap = np.pad(map, ((px, px), (py, py)), constant_values=prior)
-    intConv = convolve2d(paddedMap, convShape, mode='valid')
-    conv = intConv
+    if fftConv:
+        conv = fftconvolve(paddedMap, convShape, mode='valid')
+    else:
+        conv = convolve2d(paddedMap, convShape, mode='valid')
     return conv
 
 if __name__ == '__main__':
