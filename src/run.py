@@ -16,6 +16,7 @@ def run():
     
     isSLAM = True
     numTimeStepsSLAM = 1
+    startPoseSLAM = [100, 100, 0]
     
     saveVideo = True
     
@@ -63,7 +64,7 @@ def run():
             try:
                 x_t = readPoseData(logPath, i)
             except:
-                x_t = np.array([width/2, height/2, 0])
+                x_t = np.array(startPoseSLAM)
         else:
             x_t = lsqnl_matching(z_t, tgm.computeStaticGridMap(), x_t, sensorRange).x
         timeSLAM = time.time()
@@ -93,6 +94,9 @@ def run():
     # Save video
     if saveVideo:
         createVideo(logID, videoPath)
+
+    # Save last frame
+    tgm.plotCombinedMap(fig, saveImg=True, imgName= videoPath + logID)
 
 if __name__ == '__main__':
     run()

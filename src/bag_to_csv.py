@@ -2,8 +2,9 @@ import rosbag
 from sensor_msgs import point_cloud2
 import csv
 
-folder_path = '../logs/2024-02-13-10-35-56/'
-bag_name = '2024-02-13-10-35-56.bag'
+log = '2024-02-13-10-36-09'
+folder_path = '../logs/' + log + '/'
+bag_name = log + '.bag'
 bag = rosbag.Bag(folder_path + bag_name)
 
 i = 0

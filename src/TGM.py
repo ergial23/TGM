@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.image import imsave
 from gridMap import gridMap
 from skimage.morphology import disk
 from scipy.signal import convolve2d, fftconvolve
@@ -126,8 +127,9 @@ class TGM:
                            self.origin[1], self.origin[1] + self.height))
         if self.x_t is not None and len(self.x_t) != 0:
             plt.plot(self.x_t[0], self.x_t[1], 'ro')
-            if saveImg:
-                plt.savefig(imgName + '.png')
+        if saveImg:
+            #plt.savefig(imgName + '.png')
+            imsave(imgName + '.png', I, origin ="lower")
         plt.pause(0.01)
     
 def conv2prior(map, convShape, prior, fftConv = False):
