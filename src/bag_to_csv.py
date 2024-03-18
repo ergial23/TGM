@@ -2,10 +2,15 @@ import rosbag
 from sensor_msgs import point_cloud2
 import csv
 
-log = '2024-02-13-10-36-09'
-folder_path = '../logs/' + log + '/'
+log = '2024-03-15-11-56-01'
+folder_path = './logs/' + log + '/'
 bag_name = log + '.bag'
 bag = rosbag.Bag(folder_path + bag_name)
+
+# Print all topics
+info = bag.get_type_and_topic_info()
+for topic in info.topics:
+	print(topic)
 
 i = 0
 for topic, msg, t in bag.read_messages(topics=['/ouster/points']):
