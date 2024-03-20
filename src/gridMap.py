@@ -22,6 +22,21 @@ class gridMap:
                            self.origin[1], self.origin[1] + self.height))
         plt.show()
 
+    def crop(self, origin, width, height):
+        """
+        Crop the grid map
+        """
+        assert len(origin) == 2
+        assert origin[0] >= self.origin[0]
+        assert origin[1] >= self.origin[1]
+        assert origin[0] + width <= self.origin[0] + self.width
+        assert origin[1] + height <= self.origin[1] + self.height
+        x0 = int((origin[0] - self.origin[0]) * self.resolution)
+        y0 = int((origin[1] - self.origin[1]) * self.resolution)
+        x1 = int((origin[0] + width - self.origin[0]) * self.resolution)
+        y1 = int((origin[1] + height - self.origin[1]) * self.resolution)
+        return gridMap(origin, width, height, self.resolution, self.data[x0:x1, y0:y1])
+
 def main():
     origin = [0, 0]
     width = 10
@@ -32,7 +47,10 @@ def main():
     data[0][0] = 1
     data[19][0] = 0.5
     
-    gridMap(origin, width, height, resolution, data).plot()
+    grid = gridMap(origin, width, height, resolution, data)
+    grid.plot()
+
+    grid.crop([5, 0], 5, 3).plot()
 
 if __name__ == '__main__':
     main()
