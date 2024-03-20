@@ -13,6 +13,9 @@ class sensorModel:
         self.invModel = invModel
         self.occPrior = occPrior
 
+    def updateBasedOnPose(self, x_t):
+        self.origin = ((x_t[0:2] - np.array([self.width/2, self.height/2])) * self.resolution).round(0) / self.resolution
+
     def generateGridMap(self, z_t, x_t):
         assert isinstance(z_t, lidarScan)
         ang, dist = z_t.angles, z_t.ranges

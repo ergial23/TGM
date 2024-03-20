@@ -9,29 +9,33 @@ from SLAM import lsqnl_matching
 
 def run():
     # PARAMETERS
-    logID = '2024-02-13-10-36-09'
+    logID = '2024-02-28-15-54-14'
     is3D = True
-    initialTimeStep = 1
-    simHorizon = 521
+    initialTimeStep = 60
+    simHorizon = 10000
     
     isSLAM = True
     numTimeStepsSLAM = 1
     startPoseSLAM = [100, 100, 0]
     
-    saveVideo = True
+    saveVideo = False
     
+    # TGM parameters
     origin = [0,0]
-    width = 300
-    height = 300
+    width = 1000
+    height = 1000
     resolution = 2
     
     staticPrior = 0.3
     dynamicPrior = 0.3
-    weatherPrior = 0.01
+    weatherPrior = 0
     maxVelocity = 1/resolution
     saturationLimits = [0, 1, 0, 1]
-    fftConv = False
+    fftConv = True
     
+    # Sensor Model parameters
+    smWidth = 100
+    smHeight = 100
     sensorRange = 50
     invModel = [0.1, 0.9]
     occPrior = staticPrior + dynamicPrior + weatherPrior
@@ -41,7 +45,7 @@ def run():
     videoPath = './videos/'
 
     # Create Sensor Model and TGM
-    sM = sensorModel(origin, width, height, resolution, sensorRange, invModel ,occPrior)
+    sM = sensorModel(origin, smWidth, smHeight, resolution, sensorRange, invModel, occPrior)
     tgm = TGM(origin, width, height, resolution, staticPrior, dynamicPrior, weatherPrior, maxVelocity, saturationLimits, fftConv)
 
     # Main loop
@@ -52,7 +56,7 @@ def run():
         # Import sensor data
         if is3D:
             z_t_3D = readLidarData3D(logPath, i)
-            z_t = z_t_3D.removeGround(-0.5).removeSky(0).convertTo2D().removeClosePoints(3).voxelGridFilter(1/resolution).orderByAngle()
+            z_t = z_t_3D.removeGround(-1).removeSky(1).convertTo2D().removeClosePoints(3).voxelGridFilter(1/resolution).orderByAngle()
         else:
             z_t = readLidarData(logPath, i)
         timeData = time.time()
@@ -70,6 +74,7 @@ def run():
         timeSLAM = time.time()
 
         # Compute instantaneous grid map with inverse sensor model
+        sM.updateBasedOnPose(x_t)
         gm = sM.generateGridMap(z_t, x_t)
         timeSensorModel = time.time()
 

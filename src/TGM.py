@@ -39,18 +39,31 @@ class TGM:
 
     def update(self, instGridMap, x_t):
         assert isinstance(instGridMap, gridMap)
-        instMap = instGridMap.data
+        assert instGridMap.resolution == self.resolution
+
         # Update ego position (used for visualization purposes only)
         self.x_t = x_t
+
+        # Compute overlaping grid between the instantaneous map and the TGM
+        overlapOrigin = [max(self.origin[0], instGridMap.origin[0]), max(self.origin[1], instGridMap.origin[1])]
+        overlapWidth = min(self.origin[0] + self.width, instGridMap.origin[0] + instGridMap.width) - overlapOrigin[0]
+        overlapHeight = min(self.origin[1] + self.height, instGridMap.origin[1] + instGridMap.height) - overlapOrigin[1]
+        assert overlapWidth > 0 and overlapHeight > 0
+
+        # Crop the instantaneous map to the overlapping region
+        instMap = instGridMap.crop(overlapOrigin, overlapWidth, overlapHeight).data
+
         # Split the instantaneous map into static, dynamic, weather and free maps
         instStaticMap = instMap * self.staticPrior / (self.staticPrior + self.dynamicPrior + self.weatherPrior)
         instDynamicMap = instMap * self.dynamicPrior / (self.staticPrior + self.dynamicPrior + self.weatherPrior)
         instWeatherMap = instMap * self.weatherPrior / (self.staticPrior + self.dynamicPrior + self.weatherPrior)
         instFreeMap = 1 - instStaticMap - instDynamicMap - instWeatherMap
+
         # Predict based on previous measurements
-        predStaticMap, predDynamicMap, predWeatherMap = self.predict()
+        predStaticMap, predDynamicMap, predWeatherMap = self.predict(overlapOrigin, overlapWidth, overlapHeight)
         predFreeMap = 1 - predStaticMap - predDynamicMap - predWeatherMap
-        #
+
+        # Compute the normalized maps
         nStatic = instStaticMap * predStaticMap / self.staticPrior
         nDynamic = instDynamicMap * predDynamicMap / self.dynamicPrior
         if self.weatherPrior != 0:
@@ -64,25 +77,46 @@ class TGM:
         dynamicMatrix = nDynamic / total
         weatherMatrix = nWeather / total
 
+        # Apply saturation limits
         staticMatrix[staticMatrix > self.satHighS] = self.satHighS
         staticMatrix[staticMatrix < self.satLowS] = self.satLowS
 
         dynamicMatrix[dynamicMatrix > self.satHighD] = self.satHighD
         dynamicMatrix[dynamicMatrix < self.satLowD] = self.satLowD
 
-        self.staticMap = staticMatrix
-        self.dynamicMap = dynamicMatrix
-        self.weatherMap = weatherMatrix
+        # Set the dynamic map to the prior (TODO: improve this)
+        self.dynamicMap = (1 - self.staticMap) * self.dynamicPrior/(self.dynamicPrior + self.freePrior + self.weatherPrior)
 
-    def predict(self):
-        predStaticMap = self.staticMap
+        # Update the portion of the TGM that overlaps with the instantaneous map
+        x0 = int((overlapOrigin[0] - self.origin[0]) * self.resolution)
+        y0 = int((overlapOrigin[1] - self.origin[1]) * self.resolution)
+        x1 = int((overlapOrigin[0] + overlapWidth - self.origin[0]) * self.resolution)
+        y1 = int((overlapOrigin[1] + overlapHeight - self.origin[1]) * self.resolution)
+        self.staticMap[x0:x1, y0:y1] = staticMatrix
+        self.dynamicMap[x0:x1, y0:y1] = dynamicMatrix
+        self.weatherMap[x0:x1, y0:y1] = weatherMatrix
 
-        dynamicStay = self.dynamicMap * self.D0
-        bounceBack = conv2prior(self.staticMap, self.convShape, self.staticPrior, self.fftConv) * self.dynamicMap
-        dynamicMove = conv2prior(self.dynamicMap, self.convShape, self.dynamicPrior, self.fftConv) * (1 - self.staticMap)
+    def predict(self, overlapOrigin=None, overlapWidth=None, overlapHeight=None):
+        if overlapOrigin is None:
+            overlapOrigin = self.origin
+            overlapWidth = self.width
+            overlapHeight = self.height
+
+        # Computed cropped maps
+        staticMap = self.cropStaticMap(overlapOrigin, overlapWidth, overlapHeight)
+        dynamicMap = self.cropDynamicMap(overlapOrigin, overlapWidth, overlapHeight)
+        
+        # Compute static prediction
+        predStaticMap = staticMap
+
+        # Compute dynamic prediction
+        dynamicStay = dynamicMap * self.D0
+        bounceBack = conv2prior(staticMap, self.convShape, self.staticPrior, self.fftConv) * dynamicMap
+        dynamicMove = conv2prior(dynamicMap, self.convShape, self.dynamicPrior, self.fftConv) * (1 - staticMap)
 
         predDynamicMap = dynamicStay + bounceBack + dynamicMove
 
+        # Compute weather prediction
         predWeatherMap = (1 - predStaticMap - predDynamicMap) * self.weatherPrior / (self.weatherPrior + self.freePrior)
 
         return predStaticMap, predDynamicMap, predWeatherMap
@@ -131,6 +165,30 @@ class TGM:
             #plt.savefig(imgName + '.png')
             imsave(imgName + '.png', I, origin ="lower")
         plt.pause(0.01)
+
+    def cropStaticMap(self, origin, width, height):
+        assert len(origin) == 2
+        assert origin[0] >= self.origin[0]
+        assert origin[1] >= self.origin[1]
+        assert origin[0] + width <= self.origin[0] + self.width
+        assert origin[1] + height <= self.origin[1] + self.height
+        x0 = int((origin[0] - self.origin[0]) * self.resolution)
+        y0 = int((origin[1] - self.origin[1]) * self.resolution)
+        x1 = int((origin[0] + width - self.origin[0]) * self.resolution)
+        y1 = int((origin[1] + height - self.origin[1]) * self.resolution)
+        return self.staticMap[x0:x1, y0:y1]
+    
+    def cropDynamicMap(self, origin, width, height):
+        assert len(origin) == 2
+        assert origin[0] >= self.origin[0]
+        assert origin[1] >= self.origin[1]
+        assert origin[0] + width <= self.origin[0] + self.width
+        assert origin[1] + height <= self.origin[1] + self.height
+        x0 = int((origin[0] - self.origin[0]) * self.resolution)
+        y0 = int((origin[1] - self.origin[1]) * self.resolution)
+        x1 = int((origin[0] + width - self.origin[0]) * self.resolution)
+        y1 = int((origin[1] + height - self.origin[1]) * self.resolution)
+        return self.dynamicMap[x0:x1, y0:y1]
     
 def conv2prior(map, convShape, prior, fftConv = False):
     # Pad the map with the prior before making the convolution
