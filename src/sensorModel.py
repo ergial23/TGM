@@ -30,6 +30,18 @@ class sensorModel:
         ix_t = ((x_t[0:2]-self.origin) * self.resolution).astype(int)
         # Initialize matrix with prior
         data = np.ones((self.width*self.resolution, self.height*self.resolution)) * self.occPrior
+        # Mark occupied cells
+        for (x, y, d) in zip(ox, oy, dist):
+            # Compute the matrix index for detection points
+            ix = int(round((x - self.origin[0]) * self.resolution))
+            iy = int(round((y - self.origin[1]) * self.resolution))
+            # If the detection is within the range, mark it as occupied
+            if d<self.sensorRange:
+                try:
+                    data[ix][iy] = self.invModel[1]
+                except:
+                    pass
+        # Mark free cells
         for (x, y, d) in zip(ox, oy, dist):
             # Compute the matrix index for detection points
             ix = int(round((x - self.origin[0]) * self.resolution))
@@ -40,12 +52,8 @@ class sensorModel:
                 try:
                     if data[point[0]][point[1]] != self.invModel[1]:
                         data[point[0]][point[1]] = self.invModel[0]
-                except:
-                    pass
-            # If the detection is within the range, mark it as occupied
-            if d<self.sensorRange:
-                try:
-                    data[ix][iy] = self.invModel[1]
+                    else:
+                        break
                 except:
                     pass
         for i in range(ox.size):
