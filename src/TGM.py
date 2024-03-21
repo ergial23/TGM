@@ -148,17 +148,36 @@ class TGM:
             plt.plot(self.x_t[0], self.x_t[1], 'ro')
         plt.show()
 
-    def plotCombinedMap(self, fig=None, saveImg=False, imgName=''):
+    def plotCombinedMap(self, fig=None, saveImg=False, imgName='', following = False, width = 0, height = 0):
         if fig is None:
             fig = plt.figure()
-        I = np.zeros((self.height*self.resolution, self.width*self.resolution, 3))
-        I[:,:,0] = 1 - np.transpose(1.0*self.staticMap + 0.0*self.dynamicMap + 1.0*self.weatherMap)
-        I[:,:,1] = 1 - np.transpose(0.5*self.staticMap + 0.5*self.dynamicMap + 0.0*self.weatherMap)
-        I[:,:,2] = 1 - np.transpose(0.0*self.staticMap + 1.0*self.dynamicMap + 1.0*self.weatherMap)
+        if following:
+            assert width != 0 and height != 0
+            origin = int((self.x_t[0] - width/2) * self.resolution) / self.resolution, int((self.x_t[1] - height/2) * self.resolution) / self.resolution
+            # Compute overlaping grid
+            overlapOrigin = [max(self.origin[0], origin[0]), max(self.origin[1], origin[1])]
+            overlapWidth = min(self.origin[0] + self.width, origin[0] + width) - overlapOrigin[0]
+            overlapHeight = min(self.origin[1] + self.height, origin[1] + height) - overlapOrigin[1]
+            assert overlapWidth > 0 and overlapHeight > 0
+            # Crop the maps
+            staticMap = self.cropStaticMap(overlapOrigin, overlapWidth, overlapHeight)
+            dynamicMap = self.cropDynamicMap(overlapOrigin, overlapWidth, overlapHeight)
+            weatherMap = self.cropWeatherMap(overlapOrigin, overlapWidth, overlapHeight)
+        else:
+            overlapOrigin = self.origin
+            overlapWidth = self.width
+            overlapHeight = self.height
+            staticMap = self.staticMap
+            dynamicMap = self.dynamicMap
+            weatherMap = self.weatherMap
+        I = np.zeros((int(overlapHeight*self.resolution), int(overlapWidth*self.resolution), 3))
+        I[:,:,0] = 1 - np.transpose(1.0*staticMap + 0.0*dynamicMap + 1.0*weatherMap)
+        I[:,:,1] = 1 - np.transpose(0.5*staticMap + 0.5*dynamicMap + 0.0*weatherMap)
+        I[:,:,2] = 1 - np.transpose(0.0*staticMap + 1.0*dynamicMap + 1.0*weatherMap)
         ax = fig.add_subplot(1, 1, 1)
         ax.imshow(I, vmin=0, vmax=1, origin ="lower",
-                   extent=(self.origin[0], self.origin[0] + self.width,
-                           self.origin[1], self.origin[1] + self.height))
+                   extent=(overlapOrigin[0], overlapOrigin[0] + overlapWidth,
+                           overlapOrigin[1], overlapOrigin[1] + overlapHeight))
         if self.x_t is not None and len(self.x_t) != 0:
             plt.plot(self.x_t[0], self.x_t[1], 'ro')
         if saveImg:
@@ -189,6 +208,18 @@ class TGM:
         x1 = int((origin[0] + width - self.origin[0]) * self.resolution)
         y1 = int((origin[1] + height - self.origin[1]) * self.resolution)
         return self.dynamicMap[x0:x1, y0:y1]
+    
+    def cropWeatherMap(self, origin, width, height):
+        assert len(origin) == 2
+        assert origin[0] >= self.origin[0]
+        assert origin[1] >= self.origin[1]
+        assert origin[0] + width <= self.origin[0] + self.width
+        assert origin[1] + height <= self.origin[1] + self.height
+        x0 = int((origin[0] - self.origin[0]) * self.resolution)
+        y0 = int((origin[1] - self.origin[1]) * self.resolution)
+        x1 = int((origin[0] + width - self.origin[0]) * self.resolution)
+        y1 = int((origin[1] + height - self.origin[1]) * self.resolution)
+        return self.weatherMap[x0:x1, y0:y1]
     
 def conv2prior(map, convShape, prior, fftConv = False):
     # Pad the map with the prior before making the convolution

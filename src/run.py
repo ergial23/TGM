@@ -18,12 +18,14 @@ def run():
     numTimeStepsSLAM = 1
     startPoseSLAM = [100, 100, 0]
     
+    # Plotting parameters
     saveVideo = False
+    followingVideo = False
     
     # TGM parameters
     origin = [0,0]
-    width = 1000
-    height = 1000
+    width = 300
+    height = 300
     resolution = 2
     
     staticPrior = 0.3
@@ -84,7 +86,7 @@ def run():
 
         # Plot maps
         fig.clear()
-        tgm.plotCombinedMap(fig, saveImg=saveVideo, imgName= videoPath + 'frame_' + str(i-initialTimeStep+1))
+        tgm.plotCombinedMap(fig, saveImg=saveVideo, imgName= videoPath + 'frame_' + str(i-initialTimeStep+1), following=followingVideo, width=100, height=100)
         timePlot = time.time()
 
         # Print times
