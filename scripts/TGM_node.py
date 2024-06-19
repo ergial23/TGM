@@ -7,6 +7,7 @@ from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2 as pc2
 from nav_msgs.msg import OccupancyGrid
 from std_msgs.msg import Float64MultiArray
+from cgm_msgs.msg import ConvGridMap
 import tf
 from geometry_msgs.msg import TransformStamped
 
@@ -28,18 +29,19 @@ class tgmNode:
         
         # Robot initial pose
         self.x_t = Float64MultiArray()
-        self.x_t.data = [100, 100, 0] 
+        self.x_t.data = [50, 50, 0] 
 
         # TGM parameters
         origin = [0,0]
-        width = 300
-        height = 300
+        width = 200
+        height = 200
         self.resolution = 2
 
         staticPrior = 0.3
         dynamicPrior = 0.3
         weatherPrior = 0
-        maxVelocity = 1/self.resolution
+        # maxVelocity = 1/self.resolution
+        maxVelocity = 1
         saturationLimits = [0, 1, 0, 1]
         fftConv = True
 
@@ -58,7 +60,8 @@ class tgmNode:
         self.static_grid_pub = rospy.Publisher("static_map", OccupancyGrid, queue_size=1)
         self.dynamic_grid_pub = rospy.Publisher("dynamic_map", OccupancyGrid, queue_size=1)
         self.grid_pub = rospy.Publisher("instantmap_base", OccupancyGrid, queue_size=1)
-        self.grid_pub2 = rospy.Publisher("instantmap_eric", OccupancyGrid, queue_size=1)
+        self.grid_pub2 = rospy.Publisher("instantmap_base", OccupancyGrid, queue_size=1)
+        self.tgm_pub = rospy.Publisher("tgm_occupancy_grid",ConvGridMap, queue_size=1)
         self.br = tf.TransformBroadcaster()
 
         # Create Sensor Model and TGM
@@ -72,10 +75,11 @@ class tgmNode:
     def ground_point_cloud_callback(self, msg):
         self.latest_ground_point_cloud = msg
         self.ground_point_cloud_received = True
-        
-    def occupancy_grid_callback(self, msg):
-        self.occupancyGrid_ = msg
-        self.occupancy_grid_received= True
+    
+    # In case we generate the grid with the node
+    # def occupancy_grid_callback(self, msg):
+    #     self.occupancyGrid_ = msg
+    #     self.occupancy_grid_received= True
     
     def call_sensor_model(self, ground_pc, obstacle_pc, input_grid, x_t):
         
@@ -88,6 +92,7 @@ class tgmNode:
             req.input_grid = input_grid
             req.robot_pos = x_t
             res = create_occupancy_grid(req)
+            r
             return res.output_grid
         except rospy.ServiceException as e:
             print("Service call failed: %s" % e)
@@ -124,7 +129,7 @@ class tgmNode:
 
         # Prepare data
         data = np.array(self.occupancyGrid_.data).reshape((height_number_cells, width_number_cells), order='F')
-        # data = np.array(self.occupancyGrid_.data).reshape((height_number_cells, width_number_cells))
+
         # Custom mapping from original scale to new scale
         # UNKNOWN : 0.6, FREE_SPACE : 0.1, OBSTACLE : 0.9
         new_data = np.empty(data.shape, dtype=np.float32)
@@ -139,6 +144,7 @@ class tgmNode:
         return grid_map
     
     def point_cloud2_to_lidarscan2D(self, msg):
+        
         # Extract points as a list of tuples (x, y, z, ...)
         point_generator = pc2.read_points(msg, field_names=("x", "y", "z"), skip_nans=True)
         
@@ -151,7 +157,10 @@ class tgmNode:
 
         return z_t
     def gridMap_to_convert_nav_msgs1(self, grid_map):
+        #FUNCTION TO PRINT THE OCCUPANCY GRID GENERATED WITH THE INVERSE SENSOR MODEL
+        
         grid_msg = OccupancyGrid()
+
         # Extract information from gridMap
         grid_msg.info.origin.position.x = grid_map.origin[0]
         grid_msg.info.origin.position.y = grid_map.origin[1]
@@ -176,13 +185,15 @@ class tgmNode:
         # grid_msg.data = original_data.flatten(order='F')
         grid_msg.data = original_data.flatten()
         grid_msg.header.stamp = rospy.Time.now()
-        grid_msg.header.frame_id = "map"
+        grid_msg.header.frame_id = "base_link"
         
         self.grid_pub.publish(grid_msg)
     def gridMap_to_convert_nav_msgs2(self, grid_map):
         
+        #FUNCTION TO PRINT THE OCCUPANCY GRID GENERATED WITH THE INVERSE SENSOR MODEL
         grid_msg = OccupancyGrid()
         # Extract information from gridMap
+        
         grid_msg.info.origin.position.x = grid_map.origin[0]
         grid_msg.info.origin.position.y = grid_map.origin[1]
         width_meters = grid_map.width
@@ -197,6 +208,7 @@ class tgmNode:
         grid_msg.info.height = height_cells
         grid_msg.info.width = width_cells
         
+        
         # Reverse the data mapping from the new scale to the original scale
         # 0.6 (UNKNOWN) to -1, 0.1 (FREE_SPACE) to 0, 0.9 (OBSTACLE) to 100
         original_data = np.array(grid_map.data, dtype=np.int8)
@@ -206,7 +218,7 @@ class tgmNode:
         # grid_msg.data = original_data.flatten(order='F')
         grid_msg.data = original_data.flatten()
         grid_msg.header.stamp = rospy.Time.now()
-        grid_msg.header.frame_id = "map"
+        grid_msg.header.frame_id = "map_ref"
         
         self.grid_pub2.publish(grid_msg)
 
@@ -219,12 +231,34 @@ class tgmNode:
                          #rospy.Time.now(),
                          "base_link",  # Child frame: /base_link
                          "map")        # Parent frame: /map
+        
+    def publish_tgm_map(self):
+        m = ConvGridMap()
+        m.header.frame_id = "map_ref"
+        m.header.stamp = self.latest_obstacle_point_cloud.header.stamp
+        m.info.width = self.tgm.staticMap.shape[1]
+        m.info.height = self.tgm.staticMap.shape[0]
+        m.info.resolution = 1.0 / self.tgm.resolution
+        # Flatten the array and scale from 0...1 to 0...100
+        flat_static_map = self.tgm.staticMap.ravel()
+        flat_dynamic_map = self.tgm.dynamicMap.ravel()
+        # In OccupancyGrid, -1 is unknown, 0 is free, 100 is occupied
+        occupancy_grid_static = np.round(flat_static_map* 100).astype(int)
+        occupancy_grid_dynamic = np.round(flat_dynamic_map* 100).astype(int)
+        # Convert numpy array to list for the message
+        m.static_data = list(occupancy_grid_static)
+        m.dynamic_data = list(occupancy_grid_dynamic)
+        self.tgm_pub.publish(m)
+       
+    
     def publish_static_map(self):
+        
+        # FUNCTION TO PRINT AND DEBUG THE STATIC MAP
         
         grid_msg = OccupancyGrid()
         grid_msg.header.stamp = self.latest_obstacle_point_cloud.header.stamp
         grid_msg.header.frame_id = "map"  # Change to your robot's reference frame as needed
-
+        
         # Set the metadata
         grid_msg.info.resolution = 1.0 / self.tgm.resolution  # Grid resolution [meters/cell]
 
@@ -251,6 +285,7 @@ class tgmNode:
         self.static_grid_pub.publish(grid_msg)
     
     def publish_dynamic_map(self):
+        # FUNCTION TO PRINT AND DEBUG THE DYNAMIC MAP
         grid_msg = OccupancyGrid()
         grid_msg.header.stamp = self.latest_obstacle_point_cloud.header.stamp
         grid_msg.header.frame_id = "map"  # Change to your robot's reference frame as needed
@@ -285,15 +320,16 @@ class tgmNode:
         if self.obstacle_point_cloud_received and self.ground_point_cloud_received:    
             
             # Process the pointcloud
-            timeStart = time.time()
+            
+            # timeStart = time.time()
             z_t = self.point_cloud2_to_lidarscan2D(self.latest_obstacle_point_cloud)
             
-            timeData = time.time()
+            # timeData = time.time()
             
             # Execute SLAM
             self.x_t.data = lsqnl_matching(z_t, self.tgm.computeStaticGridMap(), self.x_t.data, self.sensorRange).x
-            print("La transformada es:", self.x_t.data)
-            timeSLAM = time.time()
+            
+            # timeSLAM = time.time()
             
             # Publish the transform 
             self.publish_transform()
@@ -301,10 +337,10 @@ class tgmNode:
             # Compute instantaneous grid map with inverse sensor model
             
             ####### SM SERVICE ########
-            self.occupancyGrid_ = self.call_sensor_model(self.latest_ground_point_cloud, self.latest_obstacle_point_cloud, self.occupancyGrid_, self.x_t)
             self.sM.updateBasedOnPose(self.x_t.data)
-            gms = self.convert_nav_msgs_to_gridMap()
-            self.gridMap_to_convert_nav_msgs1(gms)
+            self.occupancyGrid_ = self.call_sensor_model(self.latest_ground_point_cloud, self.latest_obstacle_point_cloud, self.occupancyGrid_, self.x_t)
+            gm = self.convert_nav_msgs_to_gridMap()
+            
             
             ####### SM BASE ########
             # self.sM.updateBasedOnPose(self.x_t.data)
@@ -314,24 +350,28 @@ class tgmNode:
             ####### SM NODE #######
             # gm = self.convert_nav_msgs_to_gridMap()
              
-            timeSensorModel = time.time()
+            # timeSensorModel = time.time()
             
             # Update TGM
-            self.tgm.update(gms, self.x_t.data)
-            timeTGM = time.time()
-            self.publish_static_map()
-            self.publish_dynamic_map()
+            self.tgm.update(gm, self.x_t.data)
+            
+            # timeTGM = time.time()
+            
+            self.publish_tgm_map()
+            # self.publish_static_map()
+            # self.publish_dynamic_map()
+
 
             # Set the flags to False
             self.obstacle_point_cloud_received = False
-            self.occupancy_grid_received = False
             self.ground_point_cloud_received = False
+
             # Print times
             # print('Data:    ' + str(timeData - timeStart))
             # print('SLAM:    ' + str(timeSLAM - timeData))
             # print('InvSenM: ' + str(timeSensorModel - timeSLAM))
             # print('TGM:     ' + str(timeTGM - timeSensorModel))
-            # print('Total:   ' + str(time.time() - timeStart))
+            # print('Total:   ' + str(timeTGM  - timeStart))
             # print('')
 
 
