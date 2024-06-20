@@ -33,8 +33,8 @@ class tgmNode:
 
         # TGM parameters
         origin = [0,0]
-        width = 200
-        height = 200
+        width = 400
+        height = 400
         self.resolution = 2
 
         staticPrior = 0.3
@@ -59,7 +59,7 @@ class tgmNode:
         rospy.Subscriber("/grid_map", OccupancyGrid, self.occupancy_grid_callback,queue_size=1)
         self.static_grid_pub = rospy.Publisher("static_map", OccupancyGrid, queue_size=1)
         self.dynamic_grid_pub = rospy.Publisher("dynamic_map", OccupancyGrid, queue_size=1)
-        self.grid_pub = rospy.Publisher("instantmap_base", OccupancyGrid, queue_size=1)
+        self.grid_pub = rospy.Publisher("instantmap_custom", OccupancyGrid, queue_size=1)
         self.grid_pub2 = rospy.Publisher("instantmap_base", OccupancyGrid, queue_size=1)
         self.tgm_pub = rospy.Publisher("tgm_occupancy_grid",ConvGridMap, queue_size=1)
         self.br = tf.TransformBroadcaster()
@@ -77,9 +77,9 @@ class tgmNode:
         self.ground_point_cloud_received = True
     
     # In case we generate the grid with the node
-    # def occupancy_grid_callback(self, msg):
-    #     self.occupancyGrid_ = msg
-    #     self.occupancy_grid_received= True
+    def occupancy_grid_callback(self, msg):
+        self.occupancyGrid_ = msg
+        self.occupancy_grid_received= True
     
     def call_sensor_model(self, ground_pc, obstacle_pc, input_grid, x_t):
         
@@ -92,7 +92,7 @@ class tgmNode:
             req.input_grid = input_grid
             req.robot_pos = x_t
             res = create_occupancy_grid(req)
-            r
+            
             return res.output_grid
         except rospy.ServiceException as e:
             print("Service call failed: %s" % e)
@@ -156,6 +156,7 @@ class tgmNode:
         z_t = z_t_3d.convertTo2D().orderByAngle()
 
         return z_t
+    
     def gridMap_to_convert_nav_msgs1(self, grid_map):
         #FUNCTION TO PRINT THE OCCUPANCY GRID GENERATED WITH THE INVERSE SENSOR MODEL
         
@@ -327,7 +328,7 @@ class tgmNode:
             # timeData = time.time()
             
             # Execute SLAM
-            self.x_t.data = lsqnl_matching(z_t, self.tgm.computeStaticGridMap(), self.x_t.data, self.sensorRange).x
+            # self.x_t.data = lsqnl_matching(z_t, self.tgm.computeStaticGridMap(), self.x_t.data, self.sensorRange).x
             
             # timeSLAM = time.time()
             
@@ -340,7 +341,7 @@ class tgmNode:
             self.sM.updateBasedOnPose(self.x_t.data)
             self.occupancyGrid_ = self.call_sensor_model(self.latest_ground_point_cloud, self.latest_obstacle_point_cloud, self.occupancyGrid_, self.x_t)
             gm = self.convert_nav_msgs_to_gridMap()
-            
+            self.gridMap_to_convert_nav_msgs1(gm)
             
             ####### SM BASE ########
             # self.sM.updateBasedOnPose(self.x_t.data)
